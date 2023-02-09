@@ -4,6 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CrawlingRepository extends JpaRepository<EntityCompany, String>{
+public interface CrawlingRepositoryCompany extends JpaRepository<EntityCompany, String>{
 
 }

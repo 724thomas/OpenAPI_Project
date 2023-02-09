@@ -6,7 +6,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,12 +14,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
 public class CrawlingService {
 
-    private final CrawlingRepository crawlingRepository;
+    private final CrawlingRepositoryCompany crawlingRepositoryCompany;
+    private final CrawlingRepositoryFProduct crawlingRepositoryFProduct;
+
     private final String depositProductsSearch = "depositProductsSearch"; //정기예금
     private final String savingProductsSearch = "savingProductsSearch"; //적금
     private final String annuitySavingProductsSearch = "annuitySavingProductsSearch"; //연금저축
@@ -54,11 +57,12 @@ public class CrawlingService {
         }
         urlConnection.disconnect();
         parsingJson(result.toString());
-        saveAPI(result.toString());
+        saveAPICompany(result.toString());
+        saveAPIFProduct(result.toString());
         return result.toString();
     }
 
-    public void saveAPI(String json) throws ParseException{
+    public void saveAPICompany(String json) throws ParseException{
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject) jsonParser.parse(json);
         JSONObject jsonResult = (JSONObject) jsonObject.get("result");
@@ -80,7 +84,37 @@ public class CrawlingService {
                     .dcls_strt_day(bl.get("dcls_strt_day").toString())
                     .fin_co_subm_day(bl.get("fin_co_subm_day").toString())
                     .build();
-            crawlingRepository.save(company);
+            crawlingRepositoryCompany.save(company);
+        }
+    }
+
+    public void saveAPIFProduct(String json) throws ParseException{
+        JSONParser jsonParser = new JSONParser();
+        JSONObject jsonObject = (JSONObject) jsonParser.parse(json);
+        JSONObject jsonResult = (JSONObject) jsonObject.get("result");
+        JSONArray jsonOptionList = (JSONArray) jsonResult.get("optionList");
+        try{
+            for(int j=0; j<jsonOptionList.size(); j++){
+                JSONObject ol = (JSONObject) jsonOptionList.get(j);
+                Optional<EntityCompany> company = crawlingRepositoryCompany.findById(ol.get("fin_co_no").toString() + ol.get("crdt_prdt_type").toString());
+                EntityFProduct product = EntityFProduct.builder()
+                        .entityCompany(company.get())
+                        .crdt_lend_rate_type(ol.get("crdt_lend_rate_type").toString())
+                        .crdt_lend_rate_type_nm(ol.get("crdt_lend_rate_type_nm").toString())
+                        .crdt_grad_1(ol.get("crdt_grad_1") == null ? 0 : Double.valueOf(ol.get("crdt_grad_1").toString()))
+                        .crdt_grad_4(ol.get("crdt_grad_4") == null ? 0 : Double.valueOf(ol.get("crdt_grad_4").toString()))
+                        .crdt_grad_5(ol.get("crdt_grad_5") == null ? 0 : Double.valueOf(ol.get("crdt_grad_5").toString()))
+                        .crdt_grad_6(ol.get("crdt_grad_6") == null ? 0 : Double.valueOf(ol.get("crdt_grad_6").toString()))
+                        .crdt_grad_10(ol.get("crdt_grad_10") == null ? 0 : Double.valueOf(ol.get("crdt_grad_10").toString()))
+                        .crdt_grad_11(ol.get("crdt_grad_11") == null ? 0 : Double.valueOf(ol.get("crdt_grad_11").toString()))
+                        .crdt_grad_12(ol.get("crdt_grad_12") == null ? 0 : Double.valueOf(ol.get("crdt_grad_12").toString()))
+                        .crdt_grad_13(ol.get("crdt_grad_13") == null ? 0 : Double.valueOf(ol.get("crdt_grad_13").toString()))
+                        .crdt_grad_avg(ol.get("crdt_grad_avg") == null ? 0 : Double.valueOf(ol.get("crdt_grad_avg").toString()))
+                        .build();
+                crawlingRepositoryFProduct.save(product);
+            }
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -101,7 +135,7 @@ public class CrawlingService {
             System.out.println("금융회사코드: " + bl.get("fin_co_no"));
             System.out.println("금융회사 명: " + bl.get("fin_prdt_cd"));
             System.out.println("금융상품코드: " + bl.get("crdt_prdt_type"));
-            System.out.println("금융상품명: " + bl.get("kor_co_nm"));
+            System.out.println("금융상품명: " + bl.get("kor_co_nm")); //
             System.out.println("가입방법: " + bl.get("fin_prdt_nm"));
             System.out.println("대출 종류 코드: " + bl.get("join_way"));
             System.out.println("대출종류명: " + bl.get("cb_name"));
@@ -111,30 +145,30 @@ public class CrawlingService {
             System.out.println("금융회사 제출일[YYYYMMDDHH24MI]: " + bl.get("fin_co_subm_day"));
 
             String blCode = bl.get("fin_co_no").toString() + bl.get("crdt_prdt_type").toString();
-//            for(int j=0; j<jsonOptionList.size(); j++){
-//                String olCode = ((JSONObject) jsonOptionList.get(j)).get("fin_co_no").toString() + ((JSONObject) jsonOptionList.get(j)).get("crdt_prdt_type").toString();
-//                if (blCode.equals(olCode)){
-//                    System.out.println("----------------------------------------");
-//                    JSONObject ol = (JSONObject) jsonOptionList.get(j);
-//                    System.out.println("공시 제출월: " + ol.get("dcls_month"));
-//                    System.out.println("금융회사코드: " + ol.get("fin_co_no"));
-//                    System.out.println("금융회사 명: " + ol.get("fin_prdt_cd"));
-//                    System.out.println("금융상품코드: " + ol.get("crdt_prdt_type"));
-//
-//                    System.out.println("금리구분 코드: " + ol.get("crdt_lend_rate_type"));
-//                    System.out.println("금리구분: " + ol.get("crdt_lend_rate_type_nm"));
-//                    System.out.println("900점 초과: " + ol.get("crdt_grad_1"));
-//                    System.out.println("801~900점: " + ol.get("crdt_grad_4"));
-//                    System.out.println("701~800점: " + ol.get("crdt_grad_5"));
-//                    System.out.println("601~700점: " + ol.get("crdt_grad_6"));
-//                    System.out.println("501~600점: " + ol.get("crdt_grad_10"));
-//                    System.out.println("401~500점: " + ol.get("crdt_grad_11"));
-//                    System.out.println("301~500점: " + ol.get("crdt_grad_12"));
-//                    System.out.println("300점 이하: " + ol.get("crdt_grad_13"));
-//                    System.out.println("평균 금리: " + ol.get("crdt_grad_avg"));
-//                }
-//                start = j+1;
-//            }
+            for(int j=0; j<jsonOptionList.size(); j++){
+                String olCode = ((JSONObject) jsonOptionList.get(j)).get("fin_co_no").toString() + ((JSONObject) jsonOptionList.get(j)).get("crdt_prdt_type").toString();
+                if (blCode.equals(olCode)){
+                    System.out.println("----------------------------------------");
+                    JSONObject ol = (JSONObject) jsonOptionList.get(j);
+                    System.out.println("공시 제출월: " + ol.get("dcls_month"));
+                    System.out.println("금융회사코드: " + ol.get("fin_co_no"));
+                    System.out.println("금융회사 명: " + ol.get("fin_prdt_cd"));
+                    System.out.println("금융상품코드: " + ol.get("crdt_prdt_type"));
+
+                    System.out.println("금리구분 코드: " + ol.get("crdt_lend_rate_type"));
+                    System.out.println("금리구분: " + ol.get("crdt_lend_rate_type_nm"));
+                    System.out.println("900점 초과: " + ol.get("crdt_grad_1"));
+                    System.out.println("801~900점: " + ol.get("crdt_grad_4"));
+                    System.out.println("701~800점: " + ol.get("crdt_grad_5"));
+                    System.out.println("601~700점: " + ol.get("crdt_grad_6"));
+                    System.out.println("501~600점: " + ol.get("crdt_grad_10"));
+                    System.out.println("401~500점: " + ol.get("crdt_grad_11"));
+                    System.out.println("301~500점: " + ol.get("crdt_grad_12"));
+                    System.out.println("300점 이하: " + ol.get("crdt_grad_13"));
+                    System.out.println("평균 금리: " + ol.get("crdt_grad_avg"));
+                }
+                start = j+1;
+            }
         }
     }
 }
