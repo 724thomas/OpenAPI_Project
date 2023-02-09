@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.json.simple.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -27,7 +28,9 @@ public class CrawlingService {
     private final String rentHouseLoanProductsSearch = "rentHouseLoanProductsSearch"; //전세자금대출
     private final String creditLoanProductsSearch = "creditLoanProductsSearch"; //개인신용대출
 
-    private final String accessKey = "47254f11d1939203ddadb54b7f65442f"; //인증키
+
+    @Value("${open.api_key}")
+    private String accessKey;
     private final String topFinGrpNo = "020000"; // 권역코드(은행)
     private final String pageNo = "1"; // 페이지 번호
 
