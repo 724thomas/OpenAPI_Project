@@ -1,4 +1,4 @@
-package com.example.openapi_project.crawling;
+package com.example.openapi_project.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,6 +1,8 @@
 package com.example.openapi_project.crawling;
 
 
+import com.example.openapi_project.entity.EntityCompany;
+import com.example.openapi_project.entity.EntityFProduct;
 import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
